@@ -1,0 +1,17 @@
+services:
+  spark:
+    image: spark:python3
+    container_name: tareaSparkBoris
+    user: root
+    ports:
+      - "4040:4040"  # mapeo del puerto interno para su acceso externo
+    volumes:
+      # mapeo del directorio local para el directorio de trabajo del container
+      - .:/opt/spark/work-dir
+    environment:
+      - SPARK_HOME=/opt/spark
+    # comando para correr el script de forma automática
+    command: >
+      time /opt/spark/bin/spark-submit 
+      --master local[*] 
+      /opt/spark/work-dir/project.py
