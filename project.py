@@ -32,12 +32,23 @@ if __name__ == "__main__":
     DFmedidas = spark.read.parquet("measurements")
     DFmedidas.createOrReplaceTempView("SQLdf")
     query = '''SELECT estacion, MIN(medida) AS temp_min, 
-                      MAX(medida) AS temp_max, AVG(medida) AS temp_promedio
-               FROM SQLdf
+                      MAX(medida) AS temp_max, ROUND(AVG(medida), 2) AS temp_promedio
+               FROM SQLdf 
                GROUP BY estacion
                ORDER BY estacion'''
     analisis = spark.sql(query)
-    analisis.write.csv("/opt/spark/work-dir/output", mode="overwrite", header=True)
+    # creación de un CSV con los resultados del análisis
+    analisis.write.csv("/opt/spark/work-dir/analisis", mode="overwrite", header=True)
+
+    # creación de un CSV con las estaciones mas altas y mas bajas
+    analisis.createOrReplaceTempView("SQLanalisis")
+    query2 = '''SELECT estacion, temp_promedio 
+                FROM SQLanalisis 
+                WHERE temp_promedio = (SELECT MIN(temp_promedio) FROM SQLanalisis)
+                OR temp_promedio = (SELECT MAX(temp_promedio) FROM SQLanalisis)'''
+    estacionesMinMax = spark.sql(query2)
+    estacionesMinMax.write.csv("/opt/spark/work-dir/estacionesMinMax",
+                               mode="overwrite", header=True)
 
     tiempo_final = time.time()
 
